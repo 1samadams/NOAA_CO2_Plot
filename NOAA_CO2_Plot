@@ -23,9 +23,20 @@ def fetch_data(url):
 
 # Function to parse the data
 def parse_data(data):
-    lines = data.splitlines()
-    header = lines[0].split()
-    df = pd.DataFrame([line.split() for line in lines[1:]], columns=header)
+    from io import StringIO
+
+    # Use StringIO to read the data into pandas
+    data_io = StringIO(data)
+    
+    # Skip lines until we find the actual data header
+    while True:
+        line = data_io.readline().strip()
+        if line.startswith("year"):
+            header = line.split()
+            break
+
+    # Read the rest of the data using pandas
+    df = pd.read_csv(data_io, delim_whitespace=True, header=None, names=header)
 
     # Convert columns to appropriate data types
     df['year'] = df['year'].astype(int)
@@ -93,3 +104,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
