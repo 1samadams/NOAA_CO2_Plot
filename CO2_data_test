@@ -1,7 +1,7 @@
 import unittest
 import pandas as pd
 from io import StringIO
-from main_script import fetch_data, parse_data  # Replace main_script with the actual script name
+from main_script import fetch_data, parse_data, resample_data  # Replace main_script with the actual script name
 
 class TestCO2Data(unittest.TestCase):
     def setUp(self):
@@ -26,8 +26,7 @@ class TestCO2Data(unittest.TestCase):
     def test_resampling(self):
         data = self.sample_data
         df = parse_data(data)
-        df_hourly = df['value'].resample('H').mean()
-        df_daily = df['value'].resample('D').mean()
+        df_hourly, df_daily, df_monthly, df_yearly = resample_data(df)
         self.assertEqual(len(df_hourly), 3)
         self.assertEqual(len(df_daily), 1)
         self.assertAlmostEqual(df_daily.iloc[0], 421.2, places=1)
