@@ -1,0 +1,36 @@
+import unittest
+import pandas as pd
+from io import StringIO
+from main_script import fetch_data, parse_data  # Replace main_script with the actual script name
+
+class TestCO2Data(unittest.TestCase):
+    def setUp(self):
+        # Sample data similar to the real data structure
+        self.sample_data = """year month day hour minute second value
+2024 05 27 12 00 00 420.1
+2024 05 27 13 00 00 421.2
+2024 05 27 14 00 00 422.3"""
+
+    def test_fetch_data(self):
+        url = "https://gml.noaa.gov/aftp/data/trace_gases/co2/in-situ/surface/txt/co2_mlo_surface-insitu_1_ccgg_DailyData.txt"
+        data = fetch_data(url)
+        self.assertIsNotNone(data)
+        self.assertGreater(len(data), 0)
+
+    def test_parse_data(self):
+        data = self.sample_data
+        df = parse_data(data)
+        self.assertEqual(len(df), 3)
+        self.assertEqual(list(df.columns), ['year', 'month', 'day', 'hour', 'minute', 'second', 'value'])
+
+    def test_resampling(self):
+        data = self.sample_data
+        df = parse_data(data)
+        df_hourly = df['value'].resample('H').mean()
+        df_daily = df['value'].resample('D').mean()
+        self.assertEqual(len(df_hourly), 3)
+        self.assertEqual(len(df_daily), 1)
+        self.assertAlmostEqual(df_daily.iloc[0], 421.2, places=1)
+
+if __name__ == '__main__':
+    unittest.main()
