@@ -6,10 +6,11 @@ from main_script import fetch_data, parse_data, resample_data  # Replace main_sc
 class TestCO2Data(unittest.TestCase):
     def setUp(self):
         # Sample data similar to the real data structure
-        self.sample_data = """year month day hour minute second value
-2024 05 27 12 00 00 420.1
-2024 05 27 13 00 00 421.2
-2024 05 27 14 00 00 422.3"""
+        self.sample_data = """site_code year month day hour minute second datetime time_decimal midpoint_time value value_std_dev nvalue latitude longitude altitude elevation intake_height qcflag
+MLO 2024 05 27 12 00 00 2024-05-27T12:00:00Z 2024.4109589041096 1685097600 420.1 -99.99 1 19.536 -155.576 3422.0 3397.0 25.0 . .
+MLO 2024 05 27 12 00 00 2024-05-27T12:00:00Z 2024.4109589041096 1685097600 420.1 -99.99 1 19.536 -155.576 3422.0 3397.0 25.0 . .
+MLO 2024 05 27 13 00 00 2024-05-27T13:00:00Z 2024.4116438356164 1685101200 421.2 -99.99 1 19.536 -155.576 3422.0 3397.0 25.0 . .
+MLO 2024 05 27 14 00 00 2024-05-27T14:00:00Z 2024.4123287671234 1685104800 -422.3 -99.99 1 19.536 -155.576 3422.0 3397.0 25.0 . ."""
 
     def test_fetch_data(self):
         url = "https://gml.noaa.gov/aftp/data/trace_gases/co2/in-situ/surface/txt/co2_mlo_surface-insitu_1_ccgg_DailyData.txt"
@@ -20,16 +21,17 @@ class TestCO2Data(unittest.TestCase):
     def test_parse_data(self):
         data = self.sample_data
         df = parse_data(data)
-        self.assertEqual(len(df), 3)
-        self.assertEqual(list(df.columns), ['year', 'month', 'day', 'hour', 'minute', 'second', 'value'])
+        self.assertEqual(len(df), 2)
+        self.assertEqual(list(df.columns), ['site_code', 'year', 'month', 'day', 'hour', 'minute', 'second', 'time_decimal', 'midpoint_time', 'value', 'value_std_dev', 'nvalue', 'latitude', 'longitude', 'altitude', 'elevation', 'intake_height', 'qcflag'])
+        self.assertTrue((df['value'] >= 0).all())
 
     def test_resampling(self):
         data = self.sample_data
         df = parse_data(data)
         df_hourly, df_daily, df_monthly, df_yearly = resample_data(df)
-        self.assertEqual(len(df_hourly), 3)
+        self.assertEqual(len(df_hourly), 2)
         self.assertEqual(len(df_daily), 1)
-        self.assertAlmostEqual(df_daily.iloc[0], 421.2, places=1)
+        self.assertAlmostEqual(df_daily.iloc[0], 420.65, places=2)
 
 if __name__ == '__main__':
     unittest.main()
