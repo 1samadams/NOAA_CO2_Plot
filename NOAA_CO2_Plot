@@ -56,6 +56,12 @@ def parse_data(data):
     df['datetime'] = pd.to_datetime(df[['year', 'month', 'day', 'hour', 'minute', 'second']])
     df.set_index('datetime', inplace=True)
     
+    # Remove duplicate rows
+    df = df.drop_duplicates()
+    
+    # Remove rows where the 'value' column is negative
+    df = df[df['value'] >= 0]
+    
     return df
 
 # Function to resample the data
@@ -109,3 +115,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
