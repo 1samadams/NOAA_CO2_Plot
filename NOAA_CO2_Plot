@@ -11,7 +11,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.widgets import RadioButtons
 from tqdm import tqdm
-import time
+from io import StringIO
 
 # Function to fetch the data with progress indicator
 def fetch_data(url):
@@ -30,33 +30,26 @@ def fetch_data(url):
 
 # Function to parse the data with progress indicator
 def parse_data(data):
-    from io import StringIO
-
     # Use StringIO to read the data into pandas
     data_io = StringIO(data)
     
-    # Skip lines until we find the actual data header
+    # Read the lines and skip any initial lines until we find the actual data header
     lines = data.splitlines()
     header = None
+    data_lines = []
+    
     for line in lines:
-        if line.startswith("year"):
-            header = line.split()
-            break
+        if line.strip().startswith("year"):
+            header = line.strip().split()
+            continue
+        if header:
+            data_lines.append(line.strip().split())
     
     if not header:
         raise ValueError("Header not found in data")
 
-    total_lines = len(lines)
-    parsed_lines = []
-    for i, line in enumerate(lines):
-        if line.startswith("year"):
-            continue
-        parsed_lines.append(line.split())
-        if i % 1000 == 0 or i == total_lines - 1:
-            percent_complete = (i + 1) / total_lines * 100
-            print(f"Parsing data: {percent_complete:.2f}% complete")
-
-    df = pd.DataFrame(parsed_lines, columns=header)
+    # Create DataFrame
+    df = pd.DataFrame(data_lines, columns=header)
 
     # Convert columns to appropriate data types
     df['year'] = df['year'].astype(int)
