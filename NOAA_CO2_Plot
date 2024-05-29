@@ -42,22 +42,16 @@ def parse_data(data):
     
     return df
 
-# Main function
-def main():
-    url = "https://gml.noaa.gov/aftp/data/trace_gases/co2/in-situ/surface/txt/co2_mlo_surface-insitu_1_ccgg_DailyData.txt"
-    data = fetch_data(url)
-    if data is None:
-        return
-
-    df = parse_data(data)
-
-    # Step 3: Process the data into different aggregates
+# Function to resample the data
+def resample_data(df):
     df_hourly = df['value'].resample('H').mean()
     df_daily = df['value'].resample('D').mean()
     df_monthly = df['value'].resample('M').mean()
     df_yearly = df['value'].resample('Y').mean()
+    return df_hourly, df_daily, df_monthly, df_yearly
 
-    # Step 4: Create a visualization
+# Function to create the visualization
+def create_visualization(df_hourly, df_daily, df_monthly, df_yearly):
     fig, ax = plt.subplots()
     plt.subplots_adjust(left=0.3)
 
@@ -85,6 +79,17 @@ def main():
 
     # Show the plot
     plt.show()
+
+# Main function
+def main():
+    url = "https://gml.noaa.gov/aftp/data/trace_gases/co2/in-situ/surface/txt/co2_mlo_surface-insitu_1_ccgg_DailyData.txt"
+    data = fetch_data(url)
+    if data is None:
+        return
+
+    df = parse_data(data)
+    df_hourly, df_daily, df_monthly, df_yearly = resample_data(df)
+    create_visualization(df_hourly, df_daily, df_monthly, df_yearly)
 
 if __name__ == "__main__":
     main()
