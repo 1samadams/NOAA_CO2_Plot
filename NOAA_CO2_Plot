@@ -30,27 +30,19 @@ def fetch_data(url):
 
 # Function to parse the data with progress indicator
 def parse_data(data):
-    # Use StringIO to read the data into pandas
-    data_io = StringIO(data)
+    data_lines = data.splitlines()[159:]  # Skip header lines
     
-    # Read the lines and skip any initial lines until we find the actual data header
-    lines = data.splitlines()
-    header = None
-    data_lines = []
+    # Define column names
+    columns = [
+        'site_code', 'year', 'month', 'day', 'hour', 'minute', 'second',
+        'datetime', 'time_decimal', 'midpoint_time', 'value', 'value_std_dev',
+        'nvalue', 'latitude', 'longitude', 'altitude', 'elevation', 'intake_height', 'qcflag'
+    ]
     
-    for line in lines:
-        if line.strip().startswith("year"):
-            header = line.strip().split()
-            continue
-        if header:
-            data_lines.append(line.strip().split())
+    # Read data into pandas DataFrame
+    data_io = StringIO('\n'.join(data_lines))
+    df = pd.read_csv(data_io, delim_whitespace=True, header=None, names=columns)
     
-    if not header:
-        raise ValueError("Header not found in data")
-
-    # Create DataFrame
-    df = pd.DataFrame(data_lines, columns=header)
-
     # Convert columns to appropriate data types
     df['year'] = df['year'].astype(int)
     df['month'] = df['month'].astype(int)
@@ -117,4 +109,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
