@@ -1,5 +1,5 @@
 # Libraries
-# pip install requests pandas matplotlib
+# pip install requests pandas matplotlib tqdm
 
 # -----------------------------------------------------------------------
 # Create an interactive CO2 visualization with options to switch between different time scales
@@ -10,18 +10,25 @@ import requests
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.widgets import RadioButtons
+from tqdm import tqdm
+import time
 
-# Function to fetch the data
+# Function to fetch the data with progress indicator
 def fetch_data(url):
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an exception for HTTP errors
-        return response.text
+        with requests.get(url, stream=True) as response:
+            response.raise_for_status()  # Raise an exception for HTTP errors
+            total_size = int(response.headers.get('content-length', 0))
+            block_size = 1024  # 1 Kibibyte
+            data = ""
+            for data_chunk in tqdm(response.iter_content(block_size), total=total_size // block_size, unit='KiB', unit_scale=True):
+                data += data_chunk.decode('utf-8')
+            return data
     except requests.exceptions.RequestException as e:
         print(f"Error fetching data: {e}")
         return None
 
-# Function to parse the data
+# Function to parse the data with progress indicator
 def parse_data(data):
     from io import StringIO
 
@@ -29,14 +36,27 @@ def parse_data(data):
     data_io = StringIO(data)
     
     # Skip lines until we find the actual data header
-    while True:
-        line = data_io.readline().strip()
+    lines = data.splitlines()
+    header = None
+    for line in lines:
         if line.startswith("year"):
             header = line.split()
             break
+    
+    if not header:
+        raise ValueError("Header not found in data")
 
-    # Read the rest of the data using pandas
-    df = pd.read_csv(data_io, delim_whitespace=True, header=None, names=header)
+    total_lines = len(lines)
+    parsed_lines = []
+    for i, line in enumerate(lines):
+        if line.startswith("year"):
+            continue
+        parsed_lines.append(line.split())
+        if i % 1000 == 0 or i == total_lines - 1:
+            percent_complete = (i + 1) / total_lines * 100
+            print(f"Parsing data: {percent_complete:.2f}% complete")
+
+    df = pd.DataFrame(parsed_lines, columns=header)
 
     # Convert columns to appropriate data types
     df['year'] = df['year'].astype(int)
